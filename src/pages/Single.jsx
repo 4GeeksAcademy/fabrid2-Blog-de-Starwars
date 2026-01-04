@@ -1,37 +1,92 @@
-// Import necessary hooks and components from react-router-dom and other libraries.
-import { Link, useParams } from "react-router-dom";  // To use link for navigation and useParams to get URL parameters
-import PropTypes from "prop-types";  // To define prop types for this component
-import rigoImageUrl from "../assets/img/rigo-baby.jpg"  // Import an image asset
-import useGlobalReducer from "../hooks/useGlobalReducer";  // Import a custom hook for accessing the global state
+import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import useGlobalReducer from "../hooks/useGlobalReducer";
 
-// Define and export the Single component which displays individual item details.
-export const Single = props => {
-  // Access the global state using the custom hook.
-  const { store } = useGlobalReducer()
+export const Single = () => {
+  const { type, uid } = useParams();
+  const { actions } = useGlobalReducer();
 
-  // Retrieve the 'theId' URL parameter using useParams hook.
-  const { theId } = useParams()
-  const singleTodo = store.todos.find(todo => todo.id === parseInt(theId));
+  const cleanUid = String(uid).trim();
+
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const resp = await fetch(`https://www.swapi.tech/api/${type}/${cleanUid}`);
+        if (!resp.ok) throw new Error("No se pudo cargar el detalle");
+
+        const data = await resp.json();
+        setItem(data.result);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [type, cleanUid]);
+
+  if (loading) return <div className="container py-4"><p>Loading...</p></div>;
+
+  if (error) {
+    return (
+      <div className="container py-4">
+        <div className="alert alert-danger">{error}</div>
+        <Link to="/" className="btn btn-primary">Back</Link>
+      </div>
+    );
+  }
+
+  const props = item?.properties || {};
+  const name = props.name || "Unknown";
+
+  const isFav = actions.isFavorite({ uid: cleanUid, type });
+
+  const handleFav = () => {
+    if (isFav) actions.removeFavorite({ uid: cleanUid, type });
+    else actions.addFavorite({ uid: cleanUid, type, name });
+  };
 
   return (
-    <div className="container text-center">
-      {/* Display the title of the todo element dynamically retrieved from the store using theId. */}
-      <h1 className="display-4">Todo: {singleTodo?.title}</h1>
-      <hr className="my-4" />  {/* A horizontal rule for visual separation. */}
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-start">
+        <div>
+          <h1 className="mb-2">{name}</h1>
+          <p className="text-muted">{item?.description || "No description available."}</p>
+        </div>
 
-      {/* A Link component acts as an anchor tag but is used for client-side routing to prevent page reloads. */}
-      <Link to="/">
-        <span className="btn btn-primary btn-lg" href="#" role="button">
-          Back home
-        </span>
-      </Link>
+        <button
+          type="button"
+          className={`btn ${isFav ? "btn-warning" : "btn-outline-warning"}`}
+          onClick={handleFav}
+          title={isFav ? "Remove from favorites" : "Add to favorites"}
+        >
+          {isFav ? "★ Favorite" : "☆ Add to favorites"}
+        </button>
+      </div>
+
+      <div className="card mt-4">
+        <div className="card-header">Details</div>
+        <ul className="list-group list-group-flush">
+          {Object.entries(props).map(([key, value]) => (
+            <li key={key} className="list-group-item d-flex justify-content-between">
+              <strong>{key}</strong>
+              <span>{String(value)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-3">
+        <Link to="/" className="btn btn-primary">Back home</Link>
+      </div>
     </div>
   );
-};
-
-// Use PropTypes to validate the props passed to this component, ensuring reliable behavior.
-Single.propTypes = {
-  // Although 'match' prop is defined here, it is not used in the component.
-  // Consider removing or using it as needed.
-  match: PropTypes.object
 };

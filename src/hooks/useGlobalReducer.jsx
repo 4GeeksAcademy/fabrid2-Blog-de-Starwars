@@ -1,24 +1,73 @@
-// Import necessary hooks and functions from React.
-import { useContext, useReducer, createContext } from "react";
-import storeReducer, { initialStore } from "../store"  // Import the reducer and the initial state.
+import { useContext, useReducer, createContext, useEffect } from "react";
+import storeReducer, { initialStore } from "../store";
 
-// Create a context to hold the global state of the application
-// We will call this global state the "store" to avoid confusion while using local states
-const StoreContext = createContext()
+const StoreContext = createContext();
 
-// Define a provider component that encapsulates the store and warps it in a context provider to 
-// broadcast the information throught all the app pages and components.
 export function StoreProvider({ children }) {
-    // Initialize reducer with the initial state.
-    const [store, dispatch] = useReducer(storeReducer, initialStore())
-    // Provide the store and dispatch method to all child components.
-    return <StoreContext.Provider value={{ store, dispatch }}>
-        {children}
+  const [store, dispatch] = useReducer(storeReducer, initialStore());
+
+ 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("sw_store");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        dispatch({ type: "SET_STORE", payload: parsed });
+      }
+    } catch (err) {
+      localStorage.removeItem("sw_store");
+      console.error("localStorage corrupto, eliminado:", err);
+    }
+  }, []);
+
+  
+  useEffect(() => {
+    const toSave = {
+      people: store.people,
+      planets: store.planets,
+      vehicles: store.vehicles,
+      favorites: store.favorites,
+    };
+
+    localStorage.setItem("sw_store", JSON.stringify(toSave));
+  }, [store.people, store.planets, store.vehicles, store.favorites]);
+
+  const actions = {
+    setLoading: (resource, value) => {
+      dispatch({ type: "SET_LOADING", payload: { resource, value } });
+    },
+
+    setError: (message) => {
+      dispatch({ type: "SET_ERROR", payload: message });
+    },
+
+    setResource: (resource, items) => {
+      dispatch({ type: "SET_RESOURCE", payload: { resource, items } });
+    },
+
+    addFavorite: ({ uid, type, name }) => {
+      dispatch({ type: "ADD_FAVORITE", payload: { uid, type, name } });
+    },
+
+    removeFavorite: ({ uid, type }) => {
+      dispatch({ type: "REMOVE_FAVORITE", payload: { uid, type } });
+    },
+
+    isFavorite: ({ uid, type }) => {
+      return store.favorites.some((fav) => fav.uid === uid && fav.type === type);
+    }, 
+    clearFavorites: () => {
+      dispatch({ type: "CLEAR_FAVORITES" });
+    },
+  };
+
+  return (
+    <StoreContext.Provider value={{ store, actions }}>
+      {children}
     </StoreContext.Provider>
+  );
 }
 
-// Custom hook to access the global state and dispatch function.
 export default function useGlobalReducer() {
-    const { dispatch, store } = useContext(StoreContext)
-    return { dispatch, store };
+  return useContext(StoreContext);
 }

@@ -1,0 +1,56 @@
+body {
+  background: #0b0f1a;
+  color: #e7e7e7;
+}
+
+
+a { color: #ffd54a; }
+a:hover { color: #ffe58a; }
+
+
+.navbar {
+  background: #0f172a !important;
+  border-bottom: 1px solid rgba(255, 213, 74, 0.25);
+}
+.navbar-brand {
+  color: #ffd54a !important;
+  letter-spacing: 0.5px;
+}
+
+
+.card {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.card-title { color: #fff; }
+
+
+.card-img-top {
+  height: 260px;
+  object-fit: cover;
+  background: #0b0f1a;
+}
+
+
+.dropdown-menu {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.dropdown-item {
+  color: #e7e7e7;
+}
+.dropdown-item:hover {
+  background: rgba(255, 213, 74, 0.12);
+  color: #fff;
+}
+.dropdown-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.card-img-top {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  display: block;
+  background: #0b0f1a;
+}
